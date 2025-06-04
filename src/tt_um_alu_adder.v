@@ -1,46 +1,38 @@
-// src/tt_um_alu8.v
-module tt_um_alu8 (
-input [7:0] ui_in, // Entradas del usuario (8 pines)
-output [7:0] uo_out, // Salidas del usuario (8 pines)
-input [7:0] uio_in, // Pines I/O no utilizados
-output [7:0] uio_out,
-output [7:0] uio_oe,
-input ena // Habilita el funcionamiento (alta cuando está activo)
+module tt_um_alu_adder (
+    input  [7:0] ui_in,     // Entradas de usuario (control + operandos)
+    output [7:0] uo_out,    // Salidas de usuario (resultado)
+    input  [7:0] uio_in,    // No usado
+    output [7:0] uio_out,   // No usado
+    output [7:0] uio_oe,    // No usado
+    input        clk,       // Reloj (si lo usas)
+    input        rst_n      // Reset (activo bajo)
 );
 
-rust
-Copiar
-Editar
-// Dividimos ui_in en A y B de 4 bits cada uno
-wire [3:0] A = ui_in[7:4];
-wire [3:0] B = ui_in[3:0];
+    // Puedes definir cómo interpretar los bits de ui_in
+    wire [2:0] ALUControl = ui_in[7:5];
+    wire [3:0] A = {1'b0, ui_in[4:2]};
+    wire [3:0] B = {2'b00, ui_in[1:0]};
 
-// Extendemos A y B a 8 bits (los 4 bits superiores en 0)
-wire [7:0] A_ext = {4'b0000, A};
-wire [7:0] B_ext = {4'b0000, B};
+    wire [7:0] Result;
+    wire Zero, Negative, Carry, Overflow;
 
-// Fijamos una operación de la ALU (por ejemplo, suma: 3'b010)
-wire [2:0] ALUControl = 3'b010;
+    // Instancia de la ALU de 8 bits
+    alu8 my_alu (
+        .A({4'b0000, A}),
+        .B({4'b0000, B}),
+        .ALUControl(ALUControl),
+        .Result(Result),
+        .Zero(Zero),
+        .Negative(Negative),
+        .Carry(Carry),
+        .Overflow(Overflow)
+    );
 
-wire [7:0] Result;
-wire Zero, Negative, Carry, Overflow;
+    // Asignar el resultado a la salida
+    assign uo_out = Result;
 
-// Instanciamos tu ALU de 8 bits
-alu8 my_alu (
-    .A(A_ext),
-    .B(B_ext),
-    .ALUControl(ALUControl),
-    .Result(Result),
-    .Zero(Zero),
-    .Negative(Negative),
-    .Carry(Carry),
-    .Overflow(Overflow)
-);
+    // Pines bidireccionales no utilizados
+    assign uio_out = 8'b0;
+    assign uio_oe  = 8'b0;
 
-// Usamos solo los 8 bits de salida para mostrar el resultado
-assign uo_out = Result;
-
-// No usamos los pines bidireccionales
-assign uio_out = 8'b0;
-assign uio_oe  = 8'b0;
 endmodule
